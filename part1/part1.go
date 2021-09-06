@@ -30,13 +30,10 @@ func init() {
 	flag.IntVar(&options.NumChars, "s", 0, flagS)
 }
 
+const ValidOptions = "options: [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]"
+
 func main() {
 	flag.Parse()
-
-	if !options.IsValid() {
-		fmt.Println("go run part1.go [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
-		return
-	}
 
 	buf, err := io.ReadAll(os.Stdin)
 	fmt.Println()

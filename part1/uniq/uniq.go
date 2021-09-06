@@ -12,8 +12,8 @@ type Options struct {
 	NumChars  int
 }
 
-func (r Options) IsValid() bool {
-	return !(r.C && (r.D != r.U) || r.D && r.U)
+func (r Options) isValid() bool {
+	return !(r.C && (r.D != r.U) || r.D && r.U) && r.NumFields >= 0 && r.NumChars >= 0
 }
 
 func applyKeyI(inputString string) string {
@@ -72,7 +72,7 @@ func countDuplicateLines(inputRowset []string, isEqual funcEqual, options Option
 }
 
 func Uniq(inputRowset []string, options Options) string {
-	if len(inputRowset) == 0 || inputRowset[0] == "" {
+	if len(inputRowset) == 0 || !options.isValid() {
 		return ""
 	}
 
