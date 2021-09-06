@@ -6,76 +6,88 @@ import (
 )
 
 type Options struct {
-	//arg1
-	i         bool
-	f         bool
-	numFields int
-	s         bool
-	numChars  int
+	C, D, U   bool
+	I         bool
+	NumFields int
+	NumChars  int
 }
 
-type repeatingLine struct {
-	line                string
-	numberOfRepetitions uint
-}
-
-func countDuplicateLines(inputRowset []string, isEqual func(l, r string, opt Options) bool, opt Options) []repeatingLine {
-	var noDuplicateLines []repeatingLine
-
-	i := -1
-	for _, currLine := range inputRowset {
-		if len(noDuplicateLines) != 0 && isEqual(noDuplicateLines[i].line, currLine, opt) {
-			noDuplicateLines[i].numberOfRepetitions++
-		} else {
-			noDuplicateLines = append(noDuplicateLines, repeatingLine{currLine, 1})
-			i++
-		}
-	}
-
-	return noDuplicateLines
+func (r Options) IsValid() bool {
+	return !(r.C && (r.D != r.U) || r.D && r.U)
 }
 
 func applyKeyI(inputString string) string {
 	return strings.ToLower(inputString)
 }
 func applyKeyF(inputString string, numFields int) string {
-	return strings.Join(strings.Split(inputString, " ")[numFields:], " ")
+	tempStr := strings.Split(inputString, " ")
+	if len(tempStr) <= numFields {
+		return ""
+	}
+	return strings.Join(tempStr[numFields:], " ")
 }
 func applyKeyS(inputString string, numChars int) string {
+	if len(inputString) <= numChars {
+		return ""
+	}
 	return inputString[numChars:]
 }
 
-func isEqual(l, r string, opt Options) bool {
-	if opt.i {
+func isEqual(l, r string, options Options) bool {
+	if options.I {
 		l, r = applyKeyI(l), applyKeyI(r)
 	}
 
-	if opt.f {
-		l, r = applyKeyF(l, opt.numFields), applyKeyF(r, opt.numFields)
+	if options.NumFields != 0 {
+		l, r = applyKeyF(l, options.NumFields), applyKeyF(r, options.NumFields)
 	}
 
-	if opt.s {
-		l, r = applyKeyS(l, opt.numChars), applyKeyS(r, opt.numChars)
+	if options.NumChars != 0 {
+		l, r = applyKeyS(l, options.NumChars), applyKeyS(r, options.NumChars)
 	}
 
 	return l == r
 }
 
-func Uniq(inputRowset []string, opt Options) (string, error) {
-	if len(inputRowset) == 0 || inputRowset[0] == "" {
-		return "", nil
-	}
-
-	res := countDuplicateLines(inputRowset, isEqual, opt)
-
-	// TODO сформировать вывод исходя из опций
-	var outputStr string
-
-	for _, currStr := range res {
-		outputStr += strconv.Itoa(int(currStr.numberOfRepetitions)) + " " + currStr.line + "\n"
-	}
-
-	return outputStr, nil
+type funcEqual func(l, r string, options Options) bool
+type repeatingLine struct {
+	line                string
+	numberOfRepetitions uint
 }
 
-// TODO разобраться с опциями, флагами добавить ввод/вывод
+func countDuplicateLines(inputRowset []string, isEqual funcEqual, options Options) []repeatingLine {
+	var repeatingLines []repeatingLine
+
+	i := -1
+	for _, currLine := range inputRowset {
+		if len(repeatingLines) != 0 && isEqual(repeatingLines[i].line, currLine, options) {
+			repeatingLines[i].numberOfRepetitions++
+		} else {
+			repeatingLines = append(repeatingLines, repeatingLine{currLine, 1})
+			i++
+		}
+	}
+
+	return repeatingLines
+}
+
+func Uniq(inputRowset []string, options Options) string {
+	if len(inputRowset) == 0 || inputRowset[0] == "" {
+		return ""
+	}
+
+	repeatingLines := countDuplicateLines(inputRowset, isEqual, options)
+
+	var outputData string
+	for _, currLines := range repeatingLines {
+		if options.C {
+			outputData += strconv.Itoa(int(currLines.numberOfRepetitions)) + " " + currLines.line + "\n"
+		} else if !(options.D || options.U) ||
+			(options.D && currLines.numberOfRepetitions > 1) ||
+			(options.U && currLines.numberOfRepetitions == 1) {
+			outputData += currLines.line + "\n"
+		}
+	}
+
+	return outputData[:len(outputData)-1]
+}
