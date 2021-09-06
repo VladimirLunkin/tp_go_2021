@@ -32,17 +32,62 @@ func init() {
 
 const ValidOptions = "options: [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]"
 
-func main() {
-	flag.Parse()
+func readData() []string {
+	inputFile := os.Stdin
 
-	buf, err := io.ReadAll(os.Stdin)
-	fmt.Println()
+	if flag.NArg() > 0 {
+		var err error
+		inputFile, err = os.Open(flag.Arg(0))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(inputFile)
 
+	buf, err := io.ReadAll(inputFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	str := string(buf)
+	return strings.Split(string(buf), "\n")
+}
 
-	fmt.Println(uniq.Uniq(strings.Split(str, "\n"), options))
+func printResult(result string) {
+	outputFile := os.Stdout
+
+	if flag.NArg() == 2 {
+		var err error
+		outputFile, err = os.Create(flag.Arg(1))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(outputFile)
+
+	io.StringWriter.WriteString(outputFile, result)
+}
+
+func main() {
+	flag.Parse()
+
+	if !options.IsValid() || flag.NArg() > 2 {
+		fmt.Println(ValidOptions)
+		return
+	}
+
+	inputData := readData()
+
+	result := uniq.Uniq(inputData, options)
+
+	printResult(result)
 }
