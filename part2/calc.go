@@ -12,22 +12,36 @@ import (
 	"github.com/VladimirLunkin/tp_go_2021/part2/stack"
 )
 
+func isNumber(number string) bool {
+	rNumber := regexp.MustCompile(`[\d]`)
+	return rNumber.MatchString(number)
+}
+func isSign(sign string) bool {
+	rSign := regexp.MustCompile(`[+\-*/()]`)
+	return rSign.MatchString(sign)
+}
+
 func parseStr(expressionStr string) (expression []string) {
 	rSpace := regexp.MustCompile(`\s+`)
 	inputStrWithoutSpace := rSpace.ReplaceAllString(expressionStr, "")
 
 	var number string
-	rSign := regexp.MustCompile(`[+\-*/()]`)
 	for _, symbol := range strings.Split(inputStrWithoutSpace, "") {
-		if rSign.MatchString(symbol) {
-			if number != "" {
-				expression = append(expression, number)
-			}
-			number = ""
-			expression = append(expression, symbol)
-		} else {
+		if isNumber(symbol) {
 			number += symbol
+		} else if isSign(symbol) {
+			if isNumber(number) {
+				expression = append(expression, number, symbol)
+				number = ""
+			} else if symbol == "-"{
+				number = "-"
+			} else {
+				expression = append(expression, symbol)
+			}
+		} else {
+			// TODO ложный символ
 		}
+
 	}
 	if number != "" {
 		expression = append(expression, number)
@@ -112,9 +126,9 @@ func calcBinOperation(arg1Str, sign, arg2Str string) string {
 
 func calcRPN(rpn []string) (result int) {
 	var stk stack.Stack
-	rNumber := regexp.MustCompile(`[\d]`)
+
 	for _, currValue := range rpn {
-		if rNumber.MatchString(currValue) {
+		if isNumber(currValue) {
 			stk.Push(currValue)
 		} else {
 			r := stk.Pop()
@@ -149,12 +163,10 @@ func readLineStdin() (line string) {
 func main() {
 	expression := readLineStdin()
 
-	//fmt.Println(parseStr(expression))
 	fmt.Println(calc(expression))
 }
 
 // TODO
-// 1. Переписать тесты, добавить новые
 // 2. Добавить функционал ошибок
 // 3. Тесты с ошибками
 // 4. Рефакторинг
