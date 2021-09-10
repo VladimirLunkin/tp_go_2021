@@ -31,12 +31,31 @@ func TestCalc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.assertion(t, tt.expect, calc(tt.inputStr))
+			result, _ := calc(tt.inputStr)
+			tt.assertion(t, tt.expect, result)
 		})
 	}
 }
 
 func TestCalcWrongExpression(t *testing.T) {
+	tests := []struct {
+		name      string
+		inputStr  string
+		expect    int
+		assertion require.ComparisonAssertionFunc
+	}{
+		{"Пустая строка", "", 0, require.Equal},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, _ := calc(tt.inputStr)
+			tt.assertion(t, tt.expect, result)
+		})
+	}
+}
+
+func TestConvert(t *testing.T) {
 	tests := []struct {
 		name      string
 		inputStr  string
@@ -52,7 +71,8 @@ func TestCalcWrongExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.assertion(t, tt.expect, convertExpToRPN(tt.inputStr))
+			c, _ := convertExpToRPN(tt.inputStr)
+			tt.assertion(t, tt.expect, c)
 		})
 	}
 }
