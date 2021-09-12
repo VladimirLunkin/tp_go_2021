@@ -33,34 +33,37 @@ func applyKeyS(inputString string, numChars int) string {
 	return inputString[numChars:]
 }
 
-func isEqual(l, r string, options Options) bool {
+func applyAllKeys(inputString string, options Options) (modifiedString string) {
+	modifiedString = inputString
 	if options.I {
-		l, r = applyKeyI(l), applyKeyI(r)
+		modifiedString = applyKeyI(modifiedString)
 	}
 
 	if options.NumFields != 0 {
-		l, r = applyKeyF(l, options.NumFields), applyKeyF(r, options.NumFields)
+		modifiedString = applyKeyF(modifiedString, options.NumFields)
 	}
 
 	if options.NumChars != 0 {
-		l, r = applyKeyS(l, options.NumChars), applyKeyS(r, options.NumChars)
+		modifiedString = applyKeyS(modifiedString, options.NumChars)
 	}
 
-	return l == r
+	return modifiedString
 }
 
-type funcEqual func(l, r string, options Options) bool
 type repeatingLine struct {
 	line                string
 	numberOfRepetitions uint
 }
 
-func countDuplicateLines(inputRowset []string, isEqual funcEqual, options Options) []repeatingLine {
+// Получает на вход набор строк inputRowset и опции options по которым сравниваются строки.
+// На выходе массив из структур repeatingLine, каждая содержит строку и количество ее повторений в исходном наборе.
+func countDuplicateLines(inputRowset []string, options Options) []repeatingLine {
 	var repeatingLines []repeatingLine
 
 	i := -1
 	for _, currLine := range inputRowset {
-		if len(repeatingLines) != 0 && isEqual(repeatingLines[i].line, currLine, options) {
+		if len(repeatingLines) != 0 &&
+			applyAllKeys(repeatingLines[i].line, options) == applyAllKeys(currLine, options) {
 			repeatingLines[i].numberOfRepetitions++
 		} else {
 			repeatingLines = append(repeatingLines, repeatingLine{currLine, 1})
@@ -76,7 +79,7 @@ func Uniq(inputRowset []string, options Options) string {
 		return ""
 	}
 
-	repeatingLines := countDuplicateLines(inputRowset, isEqual, options)
+	repeatingLines := countDuplicateLines(inputRowset, options)
 
 	var outputData string
 	for _, currLines := range repeatingLines {
