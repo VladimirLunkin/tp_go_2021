@@ -30,7 +30,7 @@ func parseStr(expressionStr string) (expression []string, err error) {
 		if isNumber(symbol) {
 			number += symbol
 		} else if isSign(symbol) {
-			if isNumber(number) {
+			if number != "" && number != "-" {
 				expression = append(expression, number, symbol)
 				number = ""
 			} else if symbol == "-" {
@@ -73,18 +73,13 @@ func convertExpToRPN(expressionStr string) (rpn []string, err error) {
 		} else if currLexeme == "(" {
 			stk.Push(currLexeme)
 		} else if currLexeme == ")" {
-			if stk.IsEmpty() {
-				return nil, fmt.Errorf("missing opening parenthesis")
-			}
-
 			topStack, err := stk.Pop()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("missing opening parenthesis: %s", err)
 			}
 			for topStack != "(" {
 				rpn = append(rpn, topStack)
 				topStack, err = stk.Pop()
-				//topStack, err = appendTopStack(rpn, stk)
 				if err != nil {
 					return nil, fmt.Errorf("missing opening parenthesis: %s", err)
 				}
@@ -150,22 +145,29 @@ func calcRPN(rpn []string) (int, error) {
 		if isNumber(currValue) {
 			stk.Push(currValue)
 		} else {
-			r, _ := stk.Pop() // TODO
-			l, _ := stk.Pop() // TODO
-			R, err := mathOperationsOnStrings(l, currValue, r)
+			rightArg, err := stk.Pop()
 			if err != nil {
 				return 0, err
 			}
-			stk.Push(R)
+			leftArg, err := stk.Pop()
+			if err != nil {
+				return 0, err
+			}
+
+			resultStr, err := mathOperationsOnStrings(leftArg, currValue, rightArg)
+			if err != nil {
+				return 0, err
+			}
+			stk.Push(resultStr)
 		}
 	}
 
-	result, err := stk.Pop()
+	resultStr, err := stk.Pop()
 	if err != nil {
 		return 0, err
 	}
 
-	return strconv.Atoi(result)
+	return strconv.Atoi(resultStr)
 }
 
 func calc(expression string) (result int, err error) {
@@ -209,7 +211,6 @@ func main() {
 }
 
 // TODO
-// 2. Добавить функционал ошибок в функции calcRPN,
 // 3. Тесты с ошибками
 // 4. Рефакторинг
 // 5. Чек вк

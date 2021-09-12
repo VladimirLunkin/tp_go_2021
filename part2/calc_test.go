@@ -24,8 +24,8 @@ func TestCalc(t *testing.T) {
 		{"Скобки 3", "3 + 4 * 2 / (1 - 5)*2", -1, require.Equal},
 		{"Вложенные скобки 1", "((10 + 2 * (2 - 9)) * 2)", -8, require.Equal},
 		{"Вложенные скобки 2", "((1+2*3))*((2-1)/1)", 7, require.Equal},
-		{`Скобки с префиксным "-" 1`, "5 * (-2)", -10, require.Equal},
-		{`Скобки с префиксным "-" 2`, "-5 * (-2 + 12)", -50, require.Equal},
+		{`Скобки и знак минус 1`, "5 * (-2)", -10, require.Equal},
+		{`Скобки и знак минус 2`, "-5 * (-2 + 12)", -50, require.Equal},
 		{"Много действий", "(25 - 4) / 7 + 5 * (12 - 3) * 14/2 * (17 -8) + 3", 2841, require.Equal},
 	}
 
@@ -45,6 +45,22 @@ func TestCalcWrongExpression(t *testing.T) {
 		assertion require.ComparisonAssertionFunc
 	}{
 		{"Пустая строка", "", 0, require.Equal},
+		{"Строка без чисел 1", "-", 0, require.Equal},
+		{"Строка без чисел 2", "+", 0, require.Equal},
+		{"Не валидные символы 1", "abc", 0, require.Equal},
+		{"Не валидные символы 2", "1 + x", 0, require.Equal},
+		{"Не валидные символы 3", "2 % 3", 0, require.Equal},
+		{"Лишнии знаки 1", "1 + +2", 0, require.Equal},
+		{"Лишнии знаки 2", "+7-13", 0, require.Equal},
+		{"Лишнии знаки 3", "12 * +2", 0, require.Equal},
+		{"Незакрытые скобки 1", "(1 +2", 0, require.Equal},
+		{"Незакрытые скобки 2", "2 * (3*(1-14)", 0, require.Equal},
+		{"Незакрытые скобки 3", "3 - 4+2)*6", 0, require.Equal},
+		{"Незакрытые скобки 4", ")3 - 4+2)*6", 0, require.Equal},
+		{"Незакрытые скобки 5", "3 - )4+2)*6", 0, require.Equal},
+		{"Пустые скобки 1", "()", 0, require.Equal},
+		{"Пустые скобки 2", "-()", 0, require.Equal},
+		{"Унарный оператор", "-(2)", 0, require.Equal},
 	}
 
 	for _, tt := range tests {
