@@ -5,23 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"time"
 )
-
-func ExecutePipeline(jobs ...job) {
-	wg := &sync.WaitGroup{}
-	in := make(chan interface{}, 1)
-	for _, j := range jobs {
-		wg.Add(1)
-		out := make(chan interface{}, 1)
-		go startWorker(j, in, out, wg)
-		in = out
-	}
-	for ch := range in {
-		fmt.Println(ch)
-	}
-	wg.Wait()
-}
 
 func startWorker(jobFunc job, in, out chan interface{}, waiter *sync.WaitGroup) {
 	defer waiter.Done()
@@ -29,24 +13,43 @@ func startWorker(jobFunc job, in, out chan interface{}, waiter *sync.WaitGroup) 
 
 	jobFunc(in, out)
 }
+
+func ExecutePipeline(jobs ...job) {
+	wg := &sync.WaitGroup{}
+	in := make(chan interface{}, 1)
+
+	for _, j := range jobs {
+		wg.Add(1)
+		out := make(chan interface{}, 1)
+		go startWorker(j, in, out, wg)
+		in = out
+	}
+
+	for ch := range in {
+		fmt.Println(ch)
+	}
+
+	wg.Wait()
+}
+
 type DataSigner func(string2 string) string
+
 func DataSignerWorker(dataSigner DataSigner, data string, out chan string) {
 	out <- dataSigner(data)
 }
-func md5Worker( data string, out chan string) {
-	out <- DataSignerMd5(data)
-}
+
 const kMultiHash int = 6
 
 func SingleHash(in, out chan interface{}) {
 	wg := &sync.WaitGroup{}
 	mu := sync.Mutex{}
+
 	for ch := range in {
 		data := strconv.Itoa(ch.(int))
 
 		wg.Add(1)
 
-		go func(out chan interface{}, data string, waiter *sync.WaitGroup) {
+		go func() {
 			defer wg.Done()
 
 			DataSignerOut1 := make(chan string)
@@ -65,7 +68,7 @@ func SingleHash(in, out chan interface{}) {
 			s3 := <-DataSignerOut3
 
 			out <- s1 + "~" + s3
-		}(out, data, wg)
+		}()
 	}
 
 	wg.Wait()
@@ -73,13 +76,14 @@ func SingleHash(in, out chan interface{}) {
 
 func MultiHash(in, out chan interface{}) {
 	wg := &sync.WaitGroup{}
+
 	for ch := range in {
 		data := ch.(string)
 
 		wg.Add(1)
 
-		go func(data string, waiter *sync.WaitGroup) {
-			defer waiter.Done()
+		go func() {
+			defer wg.Done()
 
 			var chs [kMultiHash]chan string
 			for i := range chs {
@@ -97,7 +101,7 @@ func MultiHash(in, out chan interface{}) {
 			}
 
 			out <- result
-		}(data, wg)
+		}()
 	}
 
 	wg.Wait()
@@ -111,25 +115,11 @@ func CombineResults(in, out chan interface{}) {
 
 	sort.Strings(results)
 
-	var res string
+	var resultStr string
 
 	for _, str := range results {
-		res += str + "_"
+		resultStr += str + "_"
 	}
 
-	out <- res[:len(res)-1]
-}
-
-func qwe(in, out chan interface{}) {
-	for _, fibNum := range []int{0, 1, 1, 2, 3, 5, 8} {
-	//for _, fibNum := range []string{"0", "1", "1", "2", "3", "5", "8"} {
-		out <- fibNum
-	}
-}
-
-func main() {
-	tStart := time.Now()
-	ExecutePipeline(qwe, SingleHash, MultiHash, CombineResults)
-	tFinish := time.Now()
-	fmt.Println(tFinish.UnixMicro() - tStart.UnixMicro())
+	out <- resultStr[:len(resultStr)-1]
 }
