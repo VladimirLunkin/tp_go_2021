@@ -16,11 +16,11 @@ func startWorker(jobFunc job, in, out chan interface{}, waiter *sync.WaitGroup) 
 
 func ExecutePipeline(jobs ...job) {
 	wg := &sync.WaitGroup{}
-	in := make(chan interface{}, 1)
+	in := make(chan interface{})
 
 	for _, j := range jobs {
 		wg.Add(1)
-		out := make(chan interface{}, 1)
+		out := make(chan interface{})
 		go startWorker(j, in, out, wg)
 		in = out
 	}
@@ -42,27 +42,21 @@ const kMultiHash int = 6
 
 func SingleHash(in, out chan interface{}) {
 	wg := &sync.WaitGroup{}
-	mu := sync.Mutex{}
 
 	for ch := range in {
 		data := strconv.Itoa(ch.(int))
 
-		wg.Add(1)
+		md5 := DataSignerMd5(data)
 
+		DataSignerOut1 := make(chan string)
+		go DataSignerWorker(DataSignerCrc32, data, DataSignerOut1)
+
+		DataSignerOut3 := make(chan string)
+		go DataSignerWorker(DataSignerCrc32, md5, DataSignerOut3)
+
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
-
-			DataSignerOut1 := make(chan string)
-			go DataSignerWorker(DataSignerCrc32, data, DataSignerOut1)
-
-			mu.Lock()
-			DataSignerOut2 := make(chan string)
-			go DataSignerWorker(DataSignerMd5, data, DataSignerOut2)
-			s2 := <-DataSignerOut2
-			mu.Unlock()
-
-			DataSignerOut3 := make(chan string)
-			go DataSignerWorker(DataSignerCrc32, s2, DataSignerOut3)
 
 			s1 := <-DataSignerOut1
 			s3 := <-DataSignerOut3
