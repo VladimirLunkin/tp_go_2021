@@ -24,7 +24,7 @@ func TestCalc(t *testing.T) {
 	tests := []testCaseStruct{
 		{
 			InputData: CheckStructInput{
-				name: "Два чсила",
+				name: "Два чиcла",
 				expression: "1 + 2",
 			},
 			OutputData: CheckStructOutput{
@@ -34,7 +34,7 @@ func TestCalc(t *testing.T) {
 		},
 		{
 			InputData: CheckStructInput{
-				name: "Три чсила",
+				name: "Три чиcла",
 				expression: "1 + 2 + 3",
 			},
 			OutputData: CheckStructOutput{

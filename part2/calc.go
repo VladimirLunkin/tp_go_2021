@@ -12,12 +12,15 @@ import (
 	"github.com/VladimirLunkin/tp_go_2021/part2/stack"
 )
 
+var (
+	rNumber = regexp.MustCompile(`[\d]`)
+	rSign = regexp.MustCompile(`[+\-*/]`)
+)
+
 func isNumber(number string) bool {
-	rNumber := regexp.MustCompile(`[\d]`)
 	return rNumber.MatchString(number)
 }
 func isSign(sign string) bool {
-	rSign := regexp.MustCompile(`[+\-*/]`)
 	return rSign.MatchString(sign)
 }
 
@@ -37,7 +40,7 @@ func getNumberFromString(charArray []string, startPos int) (number string, endPo
 }
 
 // Переводим входную строку в обратную польскую запись.
-// В случае невалидного ввода, вовращаем ошибки
+// В случае невалидного ввода, возвращаем ошибки
 func convertExpToRPN(expressionStr string) (rpn []string, err error) {
 	rSpace := regexp.MustCompile(`\s+`)
 	expressionWithoutSpace := rSpace.ReplaceAllString(expressionStr, "")
@@ -112,7 +115,7 @@ func convertExpToRPN(expressionStr string) (rpn []string, err error) {
 }
 
 // Выполняет математическую операцию над аргументами типа String,
-// возвращяя результат вычисления тип String
+// возвращая результат вычисления тип String
 func mathOperationsOnStrings(leftArgumentStr, sign, rightArgumentStr string) (resultStr string, err error) {
 	leftArgument, err := strconv.Atoi(leftArgumentStr)
 	if err != nil {
