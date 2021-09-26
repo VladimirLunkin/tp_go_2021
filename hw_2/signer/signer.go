@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -23,10 +23,6 @@ func ExecutePipeline(jobs ...job) {
 		out := make(chan interface{})
 		go startWorker(j, in, out, wg)
 		in = out
-	}
-
-	for ch := range in {
-		fmt.Println(ch)
 	}
 
 	wg.Wait()
@@ -79,19 +75,21 @@ func MultiHash(in, out chan interface{}) {
 		go func() {
 			defer wg.Done()
 
-			var chs [kMultiHash]chan string
-			for i := range chs {
-				chs[i] = make(chan string)
-			}
+			crc32Arr := [kMultiHash]string{}
 
+			wgRes := &sync.WaitGroup{}
 			for th := 0; th < kMultiHash; th++ {
-				go DataSignerWorker(DataSignerCrc32, strconv.Itoa(th)+data, chs[th])
+				wgRes.Add(1)
+				go func(th int, data string, crc32 *string, wg *sync.WaitGroup) {
+					defer wg.Done()
+					*crc32 = DataSignerCrc32(strconv.Itoa(th)+data)
+				}(th, data, &crc32Arr[th], wgRes)
 			}
+			wgRes.Wait()
 
 			var result string
-
-			for i := range chs {
-				result += <-chs[i]
+			for _, crc32 := range crc32Arr {
+				result += crc32
 			}
 
 			out <- result
@@ -109,11 +107,5 @@ func CombineResults(in, out chan interface{}) {
 
 	sort.Strings(results)
 
-	var resultStr string
-
-	for _, str := range results {
-		resultStr += str + "_"
-	}
-
-	out <- resultStr[:len(resultStr)-1]
+	out <- strings.Join(results, "_")
 }
