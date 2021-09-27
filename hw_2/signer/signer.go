@@ -75,7 +75,7 @@ func MultiHash(in, out chan interface{}) {
 		go func() {
 			defer wg.Done()
 
-			crc32Arr := [kMultiHash]string{}
+			crc32Arr := make([]string, kMultiHash)
 
 			wgRes := &sync.WaitGroup{}
 			for th := 0; th < kMultiHash; th++ {
@@ -87,12 +87,7 @@ func MultiHash(in, out chan interface{}) {
 			}
 			wgRes.Wait()
 
-			var result string
-			for _, crc32 := range crc32Arr {
-				result += crc32
-			}
-
-			out <- result
+			out <- strings.Join(crc32Arr, "")
 		}()
 	}
 
