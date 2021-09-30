@@ -44,20 +44,17 @@ func SingleHash(in, out chan interface{}) {
 
 		md5 := DataSignerMd5(data)
 
-		DataSignerOut1 := make(chan string)
-		go DataSignerWorker(DataSignerCrc32, data, DataSignerOut1)
+		firstTermCh := make(chan string)
+		go DataSignerWorker(DataSignerCrc32, data, firstTermCh)
 
-		DataSignerOut3 := make(chan string)
-		go DataSignerWorker(DataSignerCrc32, md5, DataSignerOut3)
+		secondTermCh := make(chan string)
+		go DataSignerWorker(DataSignerCrc32, md5, secondTermCh)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			s1 := <-DataSignerOut1
-			s3 := <-DataSignerOut3
-
-			out <- s1 + "~" + s3
+			out <- (<-firstTermCh) + "~" + (<-secondTermCh)
 		}()
 	}
 
